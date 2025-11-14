@@ -26,8 +26,8 @@ def show_yolo_annotations(image_path, label_path, class_names=None):
     plt.show()
 
 # Example usage
-image_path = Path("yolo/images/Melk, Stiftsbibliothek, 1399-0023.jpg")
-label_path = Path("yolo/labels/Melk, Stiftsbibliothek, 1399-0023.txt")
+image_path = Path("test/Heidelberg, Universitaetsbibliothek, Pal. germ. 618-0014.jpg")
+label_path = Path("test/Heidelberg, Universitaetsbibliothek, Pal. germ. 618-0014.txt")
 
 class_names = ["multiplication"]  # Add more class names if needed
 
