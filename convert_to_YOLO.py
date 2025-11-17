@@ -65,20 +65,12 @@ def write_label_file(filename, yolo_boxes, target):
 if not os.path.exists('labels'):
     os.makedirs('labels')
 
-# create desired class labels directory if it doesn't exist
-if not os.path.exists('desired_class_labels'):
-    os.makedirs('desired_class_labels')
-
 # create images directory if it doesn't exist
 if not os.path.exists('images'):
     os.makedirs('images')
 
-# create desired class images directory if it doesn't exist
-if not os.path.exists('desired_class_images'):
-    os.makedirs('desired_class_images')
-
 class_names = []
-desired_class = 'multiplication'
+desired_classes = ['multiplication', 'multiplication_table', 'starting_variable', 'number_line']
 
 # iterate recursively through all files in current directory, check for .xml extension
 for dirpath, dirnames, filenames in os.walk('export_job_19138314'):
@@ -88,37 +80,45 @@ for dirpath, dirnames, filenames in os.walk('export_job_19138314'):
             tree = ET.parse(os.path.join(dirpath, filename))
             root = tree.getroot()
             yolo_boxes = []
-            for region in root.findall('.//ns:TextRegion', namespace) + root.findall('.//ns:MathsRegion', namespace) + root.findall('.//ns:TableRegion', namespace):
-                # check if custom attribute contains class name
-                custom_attr = region.get('custom', '')
-                # extract class name from custom attribute
-                class_name = custom_attr.split('type:')[1].split(';')[0] if 'type:' in custom_attr else None
-                if class_name is None:
-                    continue  # skip if no class name found
-                if class_name not in class_names:
-                    class_names.append(class_name)
-                # if contains <Coords> child element, make YOLO bounding box
-                coords = region.find('ns:Coords', namespace)
-                if coords is not None:
-                   width, height = get_width_height(root)
-                   box_coords = get_box_coords(coords)
-                   yolo_boxes.append((class_names.index(class_name), *convert_box_to_YOLO(box_coords, width, height)))
-                else:
-                    print(f'File: {filename} - No Coords found in region')
-                    continue
+            desired_class_present = False
 
-            # copy image and write label file if at least one box was found
-            if yolo_boxes:  
-                # copy corresponding image to images directory
-                copy_image(dirpath, filename, 'images')
-                write_label_file(filename, yolo_boxes, 'labels')
-                # if one of the class indices in yolo_boxes matches desired class, copy to desired_class directories
-                if desired_class in class_names and any(box[0] == class_names.index(desired_class) for box in yolo_boxes):
-                    copy_image(dirpath, filename, 'desired_class_images')
-                    write_label_file(filename, yolo_boxes, 'desired_class_labels')
+            # get all elements with Region as part of their name
+            regions = root.findall('.//ns:TextRegion', namespace) + root.findall('.//ns:MathsRegion', namespace) + root.findall('.//ns:TableRegion', namespace)
+            
+            # check if any of the desired classes are present
+            desired_class_present = any(
+                any('type:' + desired_class + ';' in region.get('custom', '') for desired_class in desired_classes)
+                for region in regions
+            )
+            
+            if desired_class_present:
+                width, height = get_width_height(root)
+                for region in regions:
+                    custom_attr = region.get('custom', '')
+                    if 'type:' not in custom_attr:
+                        continue
+                    
+                    class_name = custom_attr.split('type:')[1].split(';')[0]
+                    if class_name not in class_names:
+                        class_names.append(class_name)
+                    
+                    coords = region.find('ns:Coords', namespace)
+                    if coords is not None:
+                        box_coords = get_box_coords(coords)
+                        yolo_boxes.append((class_names.index(class_name), *convert_box_to_YOLO(box_coords, width, height)))
+
+                # copy image and write label file if at least one box was found
+                if yolo_boxes:  
+                    copy_image(dirpath, filename, 'images')
+                    write_label_file(filename, yolo_boxes, 'labels')
+                    # add class names from yolo_boxes to desired_class_names list
+                    for box in yolo_boxes:
+                        class_name = class_names[box[0]]
+                        if class_name not in class_names:
+                            class_names.append(class_name)
                 
 
 # save class names and indices to classes.txt
 with open('classes.txt', 'w') as class_file:
     for class_name in class_names:
-        class_file.write(str(class_names.index(class_name)) + ': ' + class_name + '\n')
+        class_file.write('"' + class_name + '"\n')

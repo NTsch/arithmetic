@@ -26,9 +26,28 @@ def show_yolo_annotations(image_path, label_path, class_names=None):
     plt.show()
 
 # Example usage
-image_path = Path("test/Heidelberg, Universitaetsbibliothek, Pal. germ. 618-0014.jpg")
-label_path = Path("test/Heidelberg, Universitaetsbibliothek, Pal. germ. 618-0014.txt")
+image_path = Path("images/val/Leipzig, Universitaetsbibliothek Leipzig, Ms 1480-0018.jpg")
+label_path = Path("labels/val/Leipzig, Universitaetsbibliothek Leipzig, Ms 1480-0018.txt")
 
-class_names = ["multiplication"]  # Add more class names if needed
+class_names = [
+"paragraph",
+"division",
+"multiplication",
+"page-number",
+"starting_variable",
+"multiplication_cross",
+"facit",
+"multiplication_table",
+"addition",
+"test",
+"auxiliary_calculation",
+"subtraction",
+"multiplication_shift",
+"rule_of_three",
+"division_fraction",
+"calculation_unclear",
+"test_cross",
+"proportions",
+  ]  # Add more class names if needed
 
 show_yolo_annotations(image_path, label_path, class_names)
