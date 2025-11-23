@@ -7,9 +7,9 @@ def create_yolo_splits(
     images_dir,
     labels_dir,
     output_dir,
-    train_ratio=0.8,
+    train_ratio=0.9,
     val_ratio=0.1,
-    test_ratio=0.1,
+    test_ratio=0.0,
     seed=42
 ):
     random.seed(seed)

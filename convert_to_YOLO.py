@@ -94,24 +94,21 @@ for dirpath, dirnames, filenames in os.walk(input_dir):
             tree = ET.parse(os.path.join(dirpath, filename))
             root = tree.getroot()
             yolo_boxes = []
-            desired_class_present = False
+            # get all elements with Region as part of their name
+            regions = root.findall('.//ns:TextRegion', namespace) + root.findall('.//ns:MathsRegion', namespace) + root.findall('.//ns:TableRegion', namespace)
+            # check if any of the desired classes are present
+            desired_class_present = any(
+                any('type:' + desired_class + ';' in region.get('custom', '') for desired_class in desired_classes)
+                for region in regions
+            )
             
             # get full image width and height if possible, else continue to next file
             dimensions = get_width_height(root)
             if dimensions is None:
                 continue
             width, height = dimensions
-
-            # get all elements with Region as part of their name
-            regions = root.findall('.//ns:TextRegion', namespace) + root.findall('.//ns:MathsRegion', namespace) + root.findall('.//ns:TableRegion', namespace)
             
             if desired_class_mode and desired_class_present:
-                # check if any of the desired classes are present
-                desired_class_present = any(
-                    any('type:' + desired_class + ';' in region.get('custom', '') for desired_class in desired_classes)
-                    for region in regions
-                )
-                
                 # process coords for each region
                 for region in regions:
                     custom_attr = region.get('custom', '')
@@ -125,16 +122,19 @@ for dirpath, dirnames, filenames in os.walk(input_dir):
                     coords = region.find('ns:Coords', namespace)
                     if coords is not None:
                         box_coords = get_box_coords(coords)
-                        yolo_boxes.append((class_names.index(class_name), *convert_box_to_YOLO(box_coords, width, height)))
+                        #yolo_boxes.append((class_names.index(class_name), *convert_box_to_YOLO(box_coords, width, height)))
+                        yolo_boxes.append(('1' if class_name == 'paragraph' else '0', *convert_box_to_YOLO(box_coords, width, height)))
 
                 # copy image and write label file if at least one box was found
                 create_output(yolo_boxes, dirpath, filename) if yolo_boxes else None
 
                 # add class names from yolo_boxes to desired_class_names list
-                for box in yolo_boxes:
-                    class_name = class_names[box[0]]
-                    if class_name not in class_names:
-                        class_names.append(class_name)
+                #for box in yolo_boxes:
+                    #class_name = class_names[box[0]]
+                    #if class_name not in class_names:
+                        #class_names.append(class_name)
+            elif desired_class_mode and not desired_class_present:
+                continue
             else:
                 # process coords for each region
                 for region in regions:
