@@ -2,6 +2,7 @@ desired_class_images/
 desired_class_labels/
 images/
 labels/
+crops/
 export_job_19138314/
 classes.txt
 .vscode/
